@@ -38,13 +38,14 @@ def merge_data():
      join("../data/preprocessed/external_features.csv", "../data/raw/downloaded/users.csv", "../data/preprocessed/external_features.csv", ho='left',index='UserId') 
      join("../data/preprocessed/external_features.csv", "../data/raw/downloaded/popularity.csv", "../data/preprocessed/external_features.csv")
 
-def split_data(external_data_path):
+def sort_data(external_data_path):
     #aca deberiamos splitear los datos HAY QUE TENER MUCHO CUIDADO EN ORDENAR BIEN LOS DATOS CON EL INDICE DE LA FOTO
     df = pd.read_csv(external_data_path)
     df = df.sort_values(by='FlickrId')
     df.to_csv(external_data_path, index=False)
 
 if __name__ == "__main__":
-    #merge_data()
-    split_data("../data/raw/external_features.csv")
+    # merge_data()
+    # sort_data("../data/raw/external_features.csv")
+    pass
 

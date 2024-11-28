@@ -19,9 +19,9 @@ class PretrainedCNN:
         self.model.eval()  # Modo evaluación
         self.transform = transforms.Compose([
             transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.CenterCrop(224), 
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), #estos tienen q ser hiperparámetros
         ])
 
     def predict(self, folder_path: str) -> torch.Tensor:
@@ -36,7 +36,7 @@ class PretrainedCNN:
         predictions = []
         for img_path in tqdm(image_files):
             img = Image.open(img_path).convert('RGB')
-            input_tensor = self.transform(img).unsqueeze(0).to(self.device)
+            input_tensor = self.transform(img).unsqueeze(0).to(self.device) #ESTO NO ESTA TAN BUNEO DEBERIA ACHICARLO BIEN O UTILIZAR VSCNN
             with torch.no_grad():
                 output = self.model(input_tensor)
                 predictions.append(output.cpu())

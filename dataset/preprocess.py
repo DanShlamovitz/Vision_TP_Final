@@ -28,9 +28,9 @@ def delete_columns(path, columns):
     df.to_csv(path, index=False)
 
 def merge_data():
-     join("../data/raw/downloaded/headers.csv", "../data/raw/downloaded/img_info.csv", "../data/preprocessed/external_features.csv")
-     join("../data/preprocessed/external_features.csv", "../data/raw/downloaded/users.csv", "../data/preprocessed/external_features.csv", ho='left',index='UserId') 
-     join("../data/preprocessed/external_features.csv", "../data/raw/downloaded/popularity.csv", "../data/preprocessed/external_features.csv")
+     join("../data/raw/downloaded/headers.csv", "../data/raw/downloaded/img_info.csv", "../data/preprocessed/external_features2.csv")
+     join("../data/preprocessed/external_features2.csv", "../data/raw/downloaded/users.csv", "../data/preprocessed/external_features2.csv", ho='left',index='UserId') 
+     join("../data/preprocessed/external_features2.csv", "../data/raw/downloaded/popularity.csv", "../data/preprocessed/external_features2.csv")
 
 def one_hot_encoding(df, column):
     df = pd.concat([df, pd.get_dummies(df[column], prefix=column)], axis=1)
@@ -90,8 +90,6 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True, a
     X_test = X[X["FlickrId"].isin(test_ids)].copy()
     Y_train = Y[X["FlickrId"].isin(train_ids)].copy()
     Y_test = Y[X["FlickrId"].isin(test_ids)].copy()
-
-
 
     print("El largo de X_train es:", len(X_train))
     print("El largo de X_test es:", len(X_test))
@@ -169,7 +167,7 @@ if __name__ == "__main__":
 
     path = "../data/raw/external_features.csv"
     output_folder = "../data/preprocessed/"
-    split_data(path, output_folder, test_size=0.1, random_state=42, clip=False, add_tabular=False, split_images=True)
+    split_data(path, output_folder, test_size=0.1, random_state=42, clip=True, add_tabular=True, split_images=False)
 
 
     pass

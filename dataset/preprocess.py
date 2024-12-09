@@ -8,7 +8,7 @@ import pandas as pd
 import os
 import shutil
 import pickle as pkl
-
+import warnings
 
 def show_image(img, title):
     cv2.imshow(f'img id: {title}', img)
@@ -32,8 +32,24 @@ def merge_data():
      join("../data/preprocessed/external_features.csv", "../data/raw/downloaded/users.csv", "../data/preprocessed/external_features.csv", ho='left',index='UserId') 
      join("../data/preprocessed/external_features.csv", "../data/raw/downloaded/popularity.csv", "../data/preprocessed/external_features.csv")
 
+def one_hot_encoding(df, column):
+    df = pd.concat([df, pd.get_dummies(df[column], prefix=column)], axis=1)
+    df.drop(column, axis=1, inplace=True)
+    return df
 
-def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True):
+def multiply_all_columns(df):
+    #add new columns multiplying columns with eachother
+    # avoid doing this with columns that are already multiplied with eachothera
+    print("Haciendo la cosa más ineficiente de la historia")
+    #Print the types of all columns
+    print(df.dtypes)
+    columns = df.columns
+    for i in tqdm(range(len(columns))):
+        for j in range(i+1, len(columns)):
+            df[f"{columns[i]}_{columns[j]}"] = df[columns[i]]* df[columns[j]]
+    return df
+
+def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True, add_tabular=False):
     # Cargar los datos
 
     df = pd.read_csv(path)
@@ -43,16 +59,17 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True):
 
     df["Tags"] = df["Tags"].apply(lambda x: len(x.split(',')))
 
-    columns_to_delete = ["UserId","Username", "Size", "Camera", "Country",
+    columns_to_delete = ["UserId","Username", "Size", "Camera",
                         "Title", "Description", "URL", "Ispro","Day01","Day02","Day03",
                         "Day04","Day05","Day06","Day07","Day08","Day09","Day10","Day11",
                         "Day12","Day13","Day14","Day15","Day16","Day17","Day18","Day19",
                         "Day20","Day21","Day22","Day23","Day24","Day25","Day26","Day27",
                         "Day28","Day29"]
 
-    X = df.drop(columns_to_delete + ["Day30"], axis=1)  # Excluir también Day30
-    Y = df["Day30"]
-    X = df.drop(columns_to_delete + ["Day30"], axis=1)  # Excluir también Day30
+    df = df.drop(columns_to_delete, axis=1)
+    if add_tabular: df = one_hot_encoding(df, "Country")
+    else: df = df.drop("Country", axis=1)
+    X = df.drop(["Day30"], axis=1)  
     Y = df["Day30"]
 
     filtered_ids = X["FlickrId"].values
@@ -66,6 +83,8 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True):
     Y_train = Y[X["FlickrId"].isin(train_ids)].copy()
     Y_test = Y[X["FlickrId"].isin(test_ids)].copy()
 
+
+
     print("El largo de X_train es:", len(X_train))
     print("El largo de X_test es:", len(X_test))
     print("El largo de Y_train es:", len(Y_train))
@@ -73,6 +92,10 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True):
 
     X_train.drop("FlickrId", axis=1, inplace=True)
     X_test.drop("FlickrId", axis=1, inplace=True)
+    if add_tabular:
+        X_train = multiply_all_columns(X_train)
+        X_test = multiply_all_columns(X_test)
+    
 
     if clip:
         train_clip_vectors = []
@@ -82,12 +105,10 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True):
         with open("../data/preprocessed/image_features.pkl", "rb") as f:
             clip_vectors = pkl.load(f)
             
-            # Agregar los vectores de entrenamiento
             for train_id in train_ids:
                 if str(train_id) in clip_vectors:
                     train_clip_vectors.append(clip_vectors[str(train_id)])
             
-            # Agregar los vectores de prueba
             for test_id in test_ids:
                 if str(test_id) in clip_vectors:
                     test_clip_vectors.append(clip_vectors[str(test_id)])
@@ -102,20 +123,20 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True):
         with open("../data/preprocessed/test/test_clip_vectors.pkl", "wb") as f:
             pkl.dump(test_clip_vectors, f)
     
-    X_train.to_csv(os.path.join(output_folder, "train/X_train.csv"), index=False)
-    X_test.to_csv(os.path.join(output_folder, "test/X_test.csv"), index=False)
+    X_train.to_csv(os.path.join(output_folder, "train/X_train_tabular_add.csv"), index=False)
+    X_test.to_csv(os.path.join(output_folder, "test/X_test_tabular_add.csv"), index=False)
     Y_train.to_csv(os.path.join(output_folder, "train/Y_train.csv"), index=False)
     Y_test.to_csv(os.path.join(output_folder, "test/Y_test.csv"), index=False)
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore")
     #esto si no tens el csv de external featueres hecho no anda
     # merge_data()
     # sort_data("../data/raw/external_features.csv")
 
     path = "../data/raw/external_features.csv"
     output_folder = "../data/preprocessed/"
-    split_data(path, output_folder, test_size=0.1, random_state=42, clip=True)
-
+    split_data(path, output_folder, test_size=0.1, random_state=42, clip=True, add_tabular=True)
 
     pass
 

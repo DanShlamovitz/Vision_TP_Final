@@ -49,7 +49,7 @@ def multiply_all_columns(df):
             df[f"{columns[i]}_{columns[j]}"] = df[columns[i]]* df[columns[j]]
     return df
 
-def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True, add_tabular=False):
+def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True, add_tabular=False, split_images=False):
     # Cargar los datos
 
     df = pd.read_csv(path)
@@ -74,6 +74,14 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True, a
 
     filtered_ids = X["FlickrId"].values
     train_ids, test_ids = train_test_split(filtered_ids, test_size=test_size, random_state=random_state)
+
+    if split_images:
+        image_folder = "../data/raw/imgs"
+        for i in tqdm(range(len(ids))):
+            if ids[i] in train_ids:
+                shutil.move(os.path.join(image_folder, f"{ids[i]}.jpg"), os.path.join(output_folder, "train/train_imgs", f"{ids[i]}.jpg"))
+            else:
+                shutil.move(os.path.join(image_folder, f"{ids[i]}.jpg"), os.path.join(output_folder, "test/test_imgs", f"{ids[i]}.jpg"))
 
     print("El largo de train_ids es:", len(train_ids))
     print("El largo de test_ids es:", len(test_ids))
@@ -128,6 +136,31 @@ def split_data(path, output_folder, test_size=0.2, random_state=42, clip=True, a
     Y_train.to_csv(os.path.join(output_folder, "train/Y_train.csv"), index=False)
     Y_test.to_csv(os.path.join(output_folder, "test/Y_test.csv"), index=False)
 
+
+def restore_images(output_folder, image_folder="../data/raw/imgs"):
+    """
+    Restore images from the train/test directories back to the original image folder.
+
+    :param output_folder: Path to the folder where images were previously moved (train/test).
+    :param image_folder: Path to the original folder where images should be moved back to.
+    """
+    train_folder = os.path.join(output_folder, "train/train_imgs")
+    test_folder = os.path.join(output_folder, "test/test_imgs")
+    
+    # Move images from the 'train' folder back to the original location
+    for img_file in tqdm(os.listdir(train_folder)):
+        img_path = os.path.join(train_folder, img_file)
+        if os.path.exists(img_path):
+            shutil.move(img_path, os.path.join(image_folder, img_file))
+    
+    # Move images from the 'test' folder back to the original location
+    for img_file in tqdm(os.listdir(test_folder)):
+        img_path = os.path.join(test_folder, img_file)
+        if os.path.exists(img_path):
+            shutil.move(img_path, os.path.join(image_folder, img_file))
+    
+    print("Imágenes restauradas a su carpeta original.")
+
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     #esto si no tens el csv de external featueres hecho no anda
@@ -136,7 +169,8 @@ if __name__ == "__main__":
 
     path = "../data/raw/external_features.csv"
     output_folder = "../data/preprocessed/"
-    split_data(path, output_folder, test_size=0.1, random_state=42, clip=True, add_tabular=True)
+    split_data(path, output_folder, test_size=0.1, random_state=42, clip=False, add_tabular=False, split_images=True)
+
 
     pass
 

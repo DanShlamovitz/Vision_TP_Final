@@ -1,5 +1,0 @@
-pandas
-numpy 
-matplotlib
-open-cv
-torch
